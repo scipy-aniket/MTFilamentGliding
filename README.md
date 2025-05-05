@@ -1,78 +1,107 @@
-# SwarmMTFilGliding
+# Blind-Angle Simulation in Julia
 
-> **Gliding assay at high densities of microtubules**  
-> In certain in vitro gliding assays (e.g., Sumino et al.), dense layers of microtubules exhibit spontaneous vortex, milling and flocking patterns.  
-> This repository provides minimal Julia implementations of four active‐matter models designed to capture and explore these collective phenomena.
+This repository contains a Julia implementation of a Vicsek-like model incorporating a blind spot (blind angle) for each self-propelled particle, based on the work of Costanzo & Hemelrijk (2018). The simulation explores how a blind angle affects collective patterns such as milling and flocking.
 
----
+## File Structure
 
-## Repository Structure
+* `Blind-Angle.jl`: Main simulation script.
+* Output files:
 
-```text
-.
-├── Blind-Angle/
-│   └── Blind-Angle.jl        # Vicsek-like model with a “blind field of view” behind each particle
-│
-├── Nematic-Rods/
-│   └── nematic-rods.jl        # Self‐propelled rods with nematic (headless) alignment
-│
-├── SPP-Vicsek/
-│   └── vicsek-classic.jl      # Classic Vicsek flocking model (polar alignment)
-│
-└── SPP-with-memory/
-    └── spp-memory.jl          # Memory‐enhanced SPP model with intrinsic angular inertia
-```
+  * `modified_vicsek_particles_L{L}_T{T}_N{N}_eta{η}_omega{ω}.csv`: Particle positions and orientations over time.
+  * `modified_vicsek_order_L{L}_T{T}_N{N}_eta{η}_omega{ω}.csv`: Polar, nematic order parameters, and angular momentum over time.
 
-Each folder contains:
-- A single `*.jl` script implementing the model.
-- A single `*.ipynb` notebook for analysis of the generated CSV files.
+## Overview
 
----
+In this model, particles move at constant speed in a 2D periodic box. Each particle aligns its direction with visible neighbors within an interaction radius, excluding those within a specified blind angle behind it. Angular noise and a maximum turning rate (ω) further modulate the dynamics.
 
-## Getting Started
+## Parameters
 
-### Prerequisites
+Defined at the top of `Blind-Angle.jl`:
 
-- **Julia 1.8+**  
-- Standard libraries:
-  ```julia
-  using Random, Statistics, Plots
-  ```
-- (Optionally) increase threading:
-  ```bash
-  export JULIA_NUM_THREADS=4
-  ```
+| Parameter            | Description                                      | Example      |
+| -------------------- | ------------------------------------------------ | ------------ |
+| `L`                  | Domain side length                               | 20           |
+| `T`                  | Number of timesteps                              | 1000         |
+| `ρ` (rho)            | Particle density                                 | 2.0          |
+| `v_0`                | Particle speed                                   | 0.1          |
+| `cell_length`        | Grid cell size for neighbor lists                | 1.0          |
+| `interaction_radius` | Neighborhood radius for interaction              | 1.0          |
+| `dt`                 | Time step size                                   | 1.0          |
+| `N`                  | Number of particles (`Int(ρ*L^2)`)               | —            |
+| `ω` (omega)          | Maximal Turning Rate (`v_0/(r*2.03)`)            | computed     |
+| `η` (eta)            | Noise strength (`0.1*ω`)                         | computed     |
+| `noise_bounds`       | Bounds for angular noise                         | (-0.5, 0.5)  |
+| `blind_angle`        | Range of angles defining blind spot (in radians) | \[10°, 350°] |
+| `frameskip`          | Output data every this many steps                | 2            |
 
-### Installation
+## Running the Simulation
 
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/CyCelsLab/swarmMTFilGliding.git
-   cd swarmMTFilGliding
-   ```
-### Running a Simulation
-
-From the repository root, navigate to the model directory and run the script. For example:
+Ensure Julia is installed. From the project directory:
 
 ```bash
-cd Blind-Angle
 julia Blind-Angle.jl
 ```
 
-This produces:
-- **Particle data** CSV: `particles_L{L}_… .csv`
-- **Order parameters** CSV: `order_L{L}_… .csv`
-- **(Memory model only)** PNG snapshots: `particles_t{t}.png`
+This will generate two CSV files:
 
-Parameters (domain size L, density ρ, noise η, etc.) can be edited at the top of each script before running.
+* `modified_vicsek_particles_...csv`
+* `modified_vicsek_order_...csv`
 
----
+## Dependencies
 
-## Model Summaries
+The script uses:
 
-| Model            | Alignment Type        | Memory/Noise      | Key Reference                                       |
-| ---------------- | --------------------- | ----------------- | ----------------------------------------------------|
-| **Vicsek**       | Polar                 | Angular noise     | Vicsek *et al.* (1995) `Phys. Rev. Lett. 75, 1226`   |
-| **Blind‐Angle**  | Polar + blind FoV     | Angular noise     | Costanzo & Hemelrijk (2018) `J. Phys. D: Appl. Phys. 51` |
-| **Nematic‐Rods** | Nematic               | Angular noise     | Ginelli *et al.* (2010) `Phys. Rev. Lett. 104, 184502` |
-| **Memory SPP**   | Nematic + Memory      | Noise + τ memory  | Sumino *et al.* (2012) `Nature 483, 448` <br>Nagai *et al.* (2015) `Phys. Rev. Lett. 114, 168001` |
+* `Random`
+* `Statistics`
+
+Install via Julia's package manager if needed:
+
+```julia
+using Pkg
+Pkg.add(["Statistics"])
+```
+
+## Output
+
+1. **Particle Data**:
+
+   * Columns: `time_step,particle_id,x,y,theta`
+   * Positions and orientations at each output frame.
+
+2. **Order Parameters**:
+
+   * Columns: `time_step,P_t,S_t,m_a`
+   * `P_t`: Polar order.
+   * `S_t`: Nematic order.
+   * `m_a`: Mean absolute angular momentum about center of mass.
+
+## Performance Notes
+
+* Uses spatial grid lookup to speed neighbor searches.
+* Multi-threaded updates through `Threads.@threads`.
+* Control threads with:
+
+```bash
+JULIA_NUM_THREADS=4 julia Blind-Angle.jl
+```
+
+## Citation
+
+Based on:
+
+Costanzo, A., & Hemelrijk, C.K. *"Spontaneous emergence of milling (vortex state) in a Vicsek-like model."* Journal of Physics D: Applied Physics 51, no. 13 (2018): 134004.
+
+BibTeX:
+
+```bibtex
+@article{costanzo2018spontaneous,
+  title={Spontaneous emergence of milling (vortex state) in a Vicsek-like model},
+  author={Costanzo, A and Hemelrijk, CK},
+  journal={Journal of Physics D: Applied Physics},
+  volume={51},
+  number={13},
+  pages={134004},
+  year={2018},
+  publisher={IOP Publishing}
+}
+```
