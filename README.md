@@ -1,5 +1,3 @@
-# SwarmMTFilGliding
-
 > **Gliding assay at high densities of microtubules**  
 > In certain in vitro gliding assays (e.g., Sumino et al.), dense layers of microtubules exhibit spontaneous vortex, milling and flocking patterns.  
 > This repository provides minimal Julia implementations of four active‐matter models designed to capture and explore these collective phenomena.
