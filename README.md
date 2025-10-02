@@ -45,7 +45,7 @@ Each folder contains:
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/CyCelsLab/swarmMTFilGliding.git
+   git clone https://github.com/scipy-aniket/swarmMTFilGliding.git
    cd swarmMTFilGliding
    ```
 ### Running a Simulation
